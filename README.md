@@ -160,8 +160,9 @@ O navegador tambem e aberto automaticamente alguns segundos depois que o servido
 A pasta `Docs/` contem materiais de apoio do TCC:
 
 - `Docs/documentacao.html`: documentacao tecnica do pipeline, arquitetura, endpoints e bibliotecas.
-- `Docs/manual_do_codigo.html`: explicacao detalhada do codigo e guia de manutencao.
-- `Docs/TCC_Pedro_Rainha-PF2.pdf`: versao em PDF do trabalho.
+- `Docs/diagrama_arquitetura.png`: diagrama de arquitetura do sistema.
+- `Docs/diagrama_etl.png`: diagrama do fluxo ETL.
+- `Docs/diagrama_stack.png`: diagrama da stack tecnologica.
 
 ## Observacoes Importantes
 
