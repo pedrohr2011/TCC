@@ -1,0 +1,17 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+
+.env
+.env.*
+
+mapa_principal.html
+mapa_hd.html
+mapa_final.html
+*.log
+
+screenshot_*.png
+Docs/preview_*.png
+Docs/diagrama_arquitetura (1).png

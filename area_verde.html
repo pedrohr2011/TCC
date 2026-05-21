@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Mapa — Desigualdade Verde Urbana · RJ</title>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body, #map {
+    width: 100%; height: 100%;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+  }
+
+  /* painel lateral */
+  #sidebar {
+    position: absolute;
+    top: 0; right: 0;
+    width: 280px; height: 100%;
+    background: rgba(15, 20, 30, 0.92);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    color: #e8eaf0;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    border-left: 1px solid rgba(255,255,255,0.08);
+    box-shadow: -4px 0 24px rgba(0,0,0,0.5);
+    transition: transform 0.3s ease;
+  }
+  #sidebar.collapsed { transform: translateX(260px); }
+
+  #sidebar-header {
+    padding: 18px 18px 14px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+  #sidebar-header h1 {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #7dd3fc;
+  }
+  #sidebar-header p {
+    font-size: 11px;
+    color: rgba(255,255,255,0.4);
+    margin-top: 3px;
+  }
+
+  .section {
+    padding: 14px 18px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  .section-title {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.35);
+    margin-bottom: 10px;
+  }
+
+  /* botoes de mapa base */
+  .basemap-group {
+    display: flex;
+    gap: 6px;
+  }
+  .basemap-btn {
+    flex: 1;
+    padding: 7px 6px;
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.12);
+    background: rgba(255,255,255,0.05);
+    color: rgba(255,255,255,0.7);
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .basemap-btn:hover { background: rgba(255,255,255,0.1); color: #fff; }
+  .basemap-btn.active {
+    background: rgba(125, 211, 252, 0.18);
+    border-color: #7dd3fc;
+    color: #7dd3fc;
+  }
+
+  /* cartoes de camadas */
+  .layer-card {
+    padding: 11px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
+  .layer-card:last-of-type { border-bottom: none; }
+
+  .layer-row {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin-bottom: 8px;
+  }
+
+  .eye-btn {
+    width: 28px; height: 28px;
+    border-radius: 7px;
+    border: 1px solid rgba(255,255,255,0.12);
+    background: rgba(255,255,255,0.06);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.15s;
+    color: rgba(255,255,255,0.8);
+  }
+  .eye-btn:hover { background: rgba(255,255,255,0.14); }
+  .eye-btn.off {
+    background: rgba(255,255,255,0.03);
+    color: rgba(255,255,255,0.25);
+    border-color: rgba(255,255,255,0.06);
+  }
+  .eye-btn svg { width: 14px; height: 14px; }
+
+  .color-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .layer-name {
+    flex: 1;
+    font-size: 12px;
+    font-weight: 500;
+    color: #e8eaf0;
+  }
+  .layer-name.off { color: rgba(255,255,255,0.3); }
+
+  .opacity-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-left: 37px;
+  }
+  .opacity-label {
+    font-size: 10px;
+    color: rgba(255,255,255,0.35);
+    width: 22px;
+    text-align: right;
+    flex-shrink: 0;
+  }
+  input[type=range] {
+    -webkit-appearance: none;
+    flex: 1;
+    height: 3px;
+    border-radius: 2px;
+    background: rgba(255,255,255,0.15);
+    outline: none;
+    cursor: pointer;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 13px; height: 13px;
+    border-radius: 50%;
+    background: #7dd3fc;
+    border: 2px solid rgba(15,20,30,0.8);
+    box-shadow: 0 0 4px rgba(125,211,252,0.4);
+    cursor: pointer;
+  }
+  .opacity-val {
+    font-size: 10px;
+    color: rgba(255,255,255,0.45);
+    width: 28px;
+    flex-shrink: 0;
+  }
+
+  /* ── legenda ndvi ── */
+  .legend-bar {
+    height: 8px;
+    border-radius: 4px;
+    background: linear-gradient(to right, #90EE90, #008000, #006400);
+    margin: 6px 0 4px;
+  }
+  .legend-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 10px;
+    color: rgba(255,255,255,0.4);
+  }
+
+  /* ── botão atualizar ── */
+  #refresh-btn {
+    margin: 14px 18px;
+    padding: 10px;
+    border-radius: 10px;
+    border: 1px solid rgba(125,211,252,0.3);
+    background: rgba(125,211,252,0.08);
+    color: #7dd3fc;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.18s;
+    flex-shrink: 0;
+  }
+  #refresh-btn:hover:not(:disabled) {
+    background: rgba(125,211,252,0.16);
+    border-color: rgba(125,211,252,0.6);
+  }
+  #refresh-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  #refresh-btn svg {
+    width: 14px; height: 14px;
+    flex-shrink: 0;
+    transition: transform 0.6s ease;
+  }
+  #refresh-btn.spinning svg { animation: spin 1s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* barra de status */
+  #status-bar {
+    padding: 7px 18px;
+    font-size: 10px;
+    color: rgba(255,255,255,0.35);
+    border-top: 1px solid rgba(255,255,255,0.06);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+  #status-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: #94a3b8;
+    flex-shrink: 0;
+    transition: background 0.3s;
+  }
+  #status-dot.ok  { background: #22c55e; }
+  #status-dot.err { background: #ef4444; }
+  #status-dot.loading {
+    background: #f59e0b;
+    animation: pulse 1s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.35} }
+
+  /* controles de zoom */
+  #zoom-controls {
+    position: absolute;
+    left: 16px; bottom: 36px;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .zoom-btn {
+    width: 38px; height: 38px;
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.15);
+    background: rgba(15, 20, 30, 0.88);
+    backdrop-filter: blur(8px);
+    color: #e8eaf0;
+    font-size: 20px;
+    font-weight: 300;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+    transition: all 0.15s;
+    user-select: none;
+  }
+  .zoom-btn:hover {
+    background: rgba(30, 40, 60, 0.95);
+    border-color: rgba(125,211,252,0.4);
+    color: #7dd3fc;
+  }
+  .zoom-btn:active { transform: scale(0.93); }
+
+  /* recolher painel */
+  #collapse-btn {
+    position: absolute;
+    top: 50%; right: 280px;
+    transform: translateY(-50%);
+    width: 22px; height: 48px;
+    background: rgba(15,20,30,0.88);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-right: none;
+    border-radius: 8px 0 0 8px;
+    color: rgba(255,255,255,0.5);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    z-index: 1001;
+    backdrop-filter: blur(8px);
+    transition: right 0.3s ease, color 0.15s;
+    font-size: 13px;
+  }
+  #collapse-btn:hover { color: #fff; }
+
+  /* coordenadas */
+  #coords {
+    position: absolute;
+    bottom: 10px; left: 60px;
+    z-index: 999;
+    background: rgba(15,20,30,0.75);
+    backdrop-filter: blur(6px);
+    color: rgba(255,255,255,0.5);
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    border: 1px solid rgba(255,255,255,0.07);
+    font-family: 'Courier New', monospace;
+    pointer-events: none;
+  }
+
+  /* ── overlay de carregamento inicial ── */
+  #loading-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(10,14,22,0.82);
+    z-index: 2000;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    backdrop-filter: blur(4px);
+    transition: opacity 0.4s;
+  }
+  #loading-overlay.hidden { opacity: 0; pointer-events: none; }
+  .spinner {
+    width: 36px; height: 36px;
+    border: 3px solid rgba(125,211,252,0.15);
+    border-top-color: #7dd3fc;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  #loading-overlay p {
+    font-size: 13px;
+    color: rgba(255,255,255,0.6);
+  }
+</style>
+</head>
+<body>
+
+<div id="map"></div>
+
+<!-- overlay inicial -->
+<div id="loading-overlay">
+  <div class="spinner"></div>
+  <p id="loading-msg">Conectando ao Google Earth Engine…</p>
+</div>
+
+<!-- painel lateral -->
+<div id="sidebar">
+  <div id="sidebar-header">
+    <h1>Desigualdade Verde Urbana</h1>
+    <p>Rio de Janeiro · Sentinel-2 · 2025</p>
+  </div>
+
+  <!-- mapas base -->
+  <div class="section">
+    <div class="section-title">Mapa Base</div>
+    <div class="basemap-group">
+      <button class="basemap-btn" data-id="streets">Ruas</button>
+      <button class="basemap-btn active" data-id="satellite">Satélite</button>
+      <button class="basemap-btn" data-id="hybrid">Híbrido</button>
+    </div>
+  </div>
+
+  <!-- camadas -->
+  <div class="section" style="flex:1; overflow-y:auto; padding-bottom:4px;">
+    <div class="section-title">Camadas</div>
+
+    <div class="layer-card" id="card-0">
+      <div class="layer-row">
+        <button class="eye-btn" data-layer="0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+        <span class="color-dot" style="background:#e8c97a;"></span>
+        <span class="layer-name">Imagem Real (RGB)</span>
+      </div>
+      <div class="opacity-row">
+        <span class="opacity-label">Op.</span>
+        <input type="range" min="0" max="100" value="100" data-layer="0" />
+        <span class="opacity-val">100%</span>
+      </div>
+    </div>
+
+    <div class="layer-card" id="card-1">
+      <div class="layer-row">
+        <button class="eye-btn" data-layer="1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+        <span class="color-dot" style="background:#3b82f6;"></span>
+        <span class="layer-name">Rios e Canais (MNDWI)</span>
+      </div>
+      <div class="opacity-row">
+        <span class="opacity-label">Op.</span>
+        <input type="range" min="0" max="100" value="85" data-layer="1" />
+        <span class="opacity-val">85%</span>
+      </div>
+    </div>
+
+    <div class="layer-card" id="card-2">
+      <div class="layer-row">
+        <button class="eye-btn" data-layer="2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+        <span class="color-dot" style="background:#22c55e;"></span>
+        <span class="layer-name">Vegetação Urbana (NDVI)</span>
+      </div>
+      <div class="opacity-row">
+        <span class="opacity-label">Op.</span>
+        <input type="range" min="0" max="100" value="80" data-layer="2" />
+        <span class="opacity-val">80%</span>
+      </div>
+    </div>
+
+    <!-- legenda -->
+    <div style="padding-top:12px;">
+      <div class="section-title">Legenda NDVI</div>
+      <div class="legend-bar"></div>
+      <div class="legend-labels">
+        <span>0.25 (baixo)</span>
+        <span>0.80 (alto)</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- botão atualizar -->
+  <button id="refresh-btn">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+      <path d="M23 4v6h-6"/>
+      <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+    </svg>
+    Atualizar Imagens GEE
+  </button>
+
+  <!-- status -->
+  <div id="status-bar">
+    <div id="status-dot" class="loading"></div>
+    <span id="status-text">Carregando tiles…</span>
+  </div>
+</div>
+
+<!-- recolher painel -->
+<button id="collapse-btn">&#x276E;</button>
+
+<!-- zoom -->
+<div id="zoom-controls">
+  <button class="zoom-btn" id="zoom-in">+</button>
+  <button class="zoom-btn" id="zoom-out">−</button>
+</div>
+
+<!-- coordenadas -->
+<div id="coords">Lat: — | Lng: —</div>
+
+<script>
+// Mapas base
+const BASEMAPS = {
+  streets: L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap', maxZoom: 19
+  }),
+  satellite: L.tileLayer(
+    'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    { attribution: '© Esri', maxZoom: 19 }
+  ),
+  hybrid: L.tileLayer(
+    'https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
+    { attribution: '© Google', maxZoom: 21 }
+  ),
+};
+
+// Inicializacao do mapa
+const map = L.map('map', {
+  center: [-22.8646, -43.3356],
+  zoom: 13,
+  zoomControl: false,
+  layers: [BASEMAPS.satellite],
+});
+
+let currentBasemap = BASEMAPS.satellite;
+
+// Camadas GEE, iniciadas vazias
+const LAYER_CONFIG = [
+  { key: 'rgb',  opacity: 1.0 },
+  { key: 'agua', opacity: 0.85 },
+  { key: 'ndvi', opacity: 0.80 },
+];
+const layerVisible = [true, true, true];
+const geeLayers    = [null, null, null];
+
+function criarLayer(url, opacity) {
+  return L.tileLayer(url, { attribution: 'Google Earth Engine', maxZoom: 18, opacity });
+}
+
+function aplicarUrls(urls) {
+  LAYER_CONFIG.forEach(({ key, opacity }, i) => {
+    if (geeLayers[i]) map.removeLayer(geeLayers[i]);
+    geeLayers[i] = criarLayer(urls[key], opacity);
+    if (layerVisible[i]) geeLayers[i].addTo(map);
+    // Restaurar opacidade do slider
+    const slider = document.querySelector(`input[data-layer="${i}"]`);
+    if (slider) geeLayers[i].setOpacity(slider.value / 100);
+  });
+}
+
+// Apoio da barra de status
+const statusDot  = document.getElementById('status-dot');
+const statusText = document.getElementById('status-text');
+
+function setStatus(state, msg) {
+  statusDot.className = 'loading'; // limpa o estado anterior
+  statusDot.className = state;
+  statusText.textContent = msg;
+}
+
+// ── Busca inicial com polling (servidor pode estar gerando as URLs) ────────
+const overlay   = document.getElementById('loading-overlay');
+const loadingMsg = document.getElementById('loading-msg');
+
+async function buscarTilesComRetry() {
+  for (let tentativa = 0; tentativa < 30; tentativa++) {
+    try {
+      const res  = await fetch('/api/tiles');
+      const data = await res.json();
+
+      if (data.status === 'loading') {
+        loadingMsg.textContent = 'GEE processando imagens…';
+        await new Promise(r => setTimeout(r, 1500));
+        continue;
+      }
+      if (data.status === 'ok') {
+        aplicarUrls(data.urls);
+        overlay.classList.add('hidden');
+        setStatus('ok', 'Tiles GEE carregados');
+        return;
+      }
+      // erro
+      loadingMsg.textContent = `Erro: ${data.message}`;
+      setStatus('err', 'Erro ao carregar GEE');
+      return;
+    } catch (e) {
+      loadingMsg.textContent = 'Sem resposta do servidor…';
+      await new Promise(r => setTimeout(r, 2000));
+    }
+  }
+  loadingMsg.textContent = 'Tempo esgotado. Verifique o servidor.';
+  setStatus('err', 'Tempo esgotado');
+}
+
+buscarTilesComRetry();
+
+// Botao Atualizar
+const refreshBtn = document.getElementById('refresh-btn');
+
+refreshBtn.addEventListener('click', async () => {
+  refreshBtn.disabled = true;
+  refreshBtn.classList.add('spinning');
+  setStatus('loading', 'Atualizando imagens GEE…');
+
+  try {
+    const res  = await fetch('/api/refresh');
+    const data = await res.json();
+
+    if (data.status === 'ok') {
+      aplicarUrls(data.urls);
+      setStatus('ok', 'Tiles atualizados · ' + new Date().toLocaleTimeString('pt-BR'));
+    } else {
+      setStatus('err', 'Erro: ' + data.message);
+    }
+  } catch (e) {
+    setStatus('err', 'Falha na conexão com o servidor');
+  } finally {
+    refreshBtn.disabled = false;
+    refreshBtn.classList.remove('spinning');
+  }
+});
+
+// Troca de mapa base
+document.querySelectorAll('.basemap-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.basemap-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    map.removeLayer(currentBasemap);
+    currentBasemap = BASEMAPS[btn.dataset.id];
+    currentBasemap.addTo(map);
+    currentBasemap.bringToBack();
+  });
+});
+
+// Alternancia de visibilidade das camadas
+const EYE_ON  = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
+const EYE_OFF = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`;
+
+document.querySelectorAll('.eye-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const i = +btn.dataset.layer;
+    layerVisible[i] = !layerVisible[i];
+    const nameEl = document.querySelector(`#card-${i} .layer-name`);
+    if (layerVisible[i]) {
+      if (geeLayers[i]) geeLayers[i].addTo(map);
+      btn.innerHTML = EYE_ON;
+      btn.classList.remove('off');
+      nameEl.classList.remove('off');
+    } else {
+      if (geeLayers[i]) map.removeLayer(geeLayers[i]);
+      btn.innerHTML = EYE_OFF;
+      btn.classList.add('off');
+      nameEl.classList.add('off');
+    }
+  });
+});
+
+// Controles de opacidade
+document.querySelectorAll('input[type=range]').forEach(slider => {
+  const valEl = slider.parentElement.querySelector('.opacity-val');
+  slider.addEventListener('input', () => {
+    const i  = +slider.dataset.layer;
+    const op = slider.value / 100;
+    if (geeLayers[i]) geeLayers[i].setOpacity(op);
+    valEl.textContent = slider.value + '%';
+  });
+});
+
+// Zoom
+document.getElementById('zoom-in').addEventListener('click',  () => map.zoomIn());
+document.getElementById('zoom-out').addEventListener('click', () => map.zoomOut());
+
+// Recolher painel lateral
+const sidebar     = document.getElementById('sidebar');
+const collapseBtn = document.getElementById('collapse-btn');
+let collapsed = false;
+
+collapseBtn.addEventListener('click', () => {
+  collapsed = !collapsed;
+  sidebar.classList.toggle('collapsed', collapsed);
+  collapseBtn.style.right        = collapsed ? '20px' : '280px';
+  collapseBtn.innerHTML          = collapsed ? '&#x276F;' : '&#x276E;';
+  collapseBtn.style.borderRadius = collapsed ? '8px' : '8px 0 0 8px';
+  collapseBtn.style.borderRight  = collapsed ? '1px solid rgba(255,255,255,0.08)' : 'none';
+  setTimeout(() => map.invalidateSize(), 310);
+});
+
+// Coordenadas
+const coordsEl = document.getElementById('coords');
+map.on('mousemove', e => {
+  coordsEl.textContent = `Lat: ${e.latlng.lat.toFixed(5)} | Lng: ${e.latlng.lng.toFixed(5)}`;
+});
+</script>
+</body>
+</html>
