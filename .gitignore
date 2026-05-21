@@ -3,14 +3,55 @@ __pycache__/
 .venv/
 venv/
 env/
+.python-version
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.ipynb_checkpoints/
 
 .env
 .env.*
+!.env.example
+
+# Credenciais, chaves e tokens
+secrets/
+credentials/
+.credentials/
+*.pem
+*.key
+*.crt
+*.cer
+*.p12
+*.pfx
+*.jks
+id_rsa*
+id_ed25519*
+service-account*.json
+service_account*.json
+credentials*.json
+client_secret*.json
+token*.json
+oauth*.json
+secret*.json
+firebase*.json
+google-credentials*.json
+
+# Configuracoes locais de servicos externos
+.earthengine/
+.config/earthengine/
+.google/
+gcloud/
+google-cloud-sdk/
 
 mapa_principal.html
 mapa_hd.html
 mapa_final.html
+*.tmp
+*.bak
 *.log
+*.db
+*.sqlite
+*.sqlite3
 
 screenshot_*.png
 Docs/preview_*.png
