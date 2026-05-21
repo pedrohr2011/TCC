@@ -1,4 +1,4 @@
-# TCC: Mapa Vivo da Desigualdade Verde Urbana no Rio de Janeiro
+# TCC: Mapa Vivo da Desigualdade Verde no Rio de Janeiro
 
 Projeto de TCC que implementa um pipeline ETL de imagens Sentinel-2 no Google Earth Engine para visualizar vegetacao urbana e corpos hidricos no municipio do Rio de Janeiro. O resultado e exibido em um mapa interativo com camadas alternaveis, controle de opacidade e atualizacao sob demanda das imagens processadas.
 
