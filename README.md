@@ -17,6 +17,20 @@ O projeto busca apoiar a analise da distribuicao desigual de areas verdes urbana
 - Servidor Flask com cache das URLs de tiles geradas pelo GEE.
 - Interface Leaflet com mapas base, camadas independentes, controle de opacidade e botao de atualizacao.
 
+## Prints do Sistema
+
+Visualizacao principal do mapa interativo com camadas GEE carregadas:
+
+![Sistema em funcionamento](Docs/print_sistema_desktop.png)
+
+Comparacao visual entre ruas de Copacabana e ruas da Zona Norte (Madureira), com Sentinel-2, NDVI e MNDWI:
+
+![Comparacao Copacabana e Zona Norte](Docs/print_comparacao_copacabana_zona_norte.png)
+
+Interface em tela estreita:
+
+![Interface mobile](Docs/print_sistema_mobile.png)
+
 ## Como Funciona
 
 O fluxo principal esta em `servidor.py`.
@@ -93,6 +107,7 @@ earthengine authenticate
 ```
 
 Se for necessario informar o projeto do GEE, configure a variavel de ambiente antes de iniciar o servidor.
+Voce tambem pode criar um arquivo `.env` local a partir de `.env.example`, o que ajuda quando o projeto e executado pelo Code Runner do VS Code.
 
 PowerShell:
 
@@ -143,6 +158,10 @@ O navegador tambem e aberto automaticamente alguns segundos depois que o servido
 ├── servidor.py
 ├── area_verde.html
 ├── pipelineetl.py
+├── app/
+│   └── gee_config.py
+├── tests/
+│   └── test_gee_config.py
 ├── requirements.txt
 ├── Documentação.pdf
 ├── README.md

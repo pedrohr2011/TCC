@@ -4,25 +4,12 @@ import ee
 import os
 import threading
 import webbrowser
+from app.gee_config import initialize_gee
 
 app = Flask(__name__, static_folder=os.path.dirname(__file__))
-GEE_PROJECT_ID = os.getenv('GEE_PROJECT_ID')
 
 # Inicializacao do Google Earth Engine
-def init_gee():
-    try:
-        if GEE_PROJECT_ID:
-            ee.Initialize(project=GEE_PROJECT_ID)
-        else:
-            ee.Initialize()
-    except Exception:
-        ee.Authenticate()
-        if GEE_PROJECT_ID:
-            ee.Initialize(project=GEE_PROJECT_ID)
-        else:
-            ee.Initialize()
-
-init_gee()
+initialize_gee()
 
 # Pipeline GEE para URLs de tiles
 def gerar_urls():

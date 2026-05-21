@@ -3,22 +3,10 @@ import ee
 import geemap
 import os
 import webbrowser
-
-GEE_PROJECT_ID = os.getenv('GEE_PROJECT_ID')
+from app.gee_config import initialize_gee
 
 # 1. Inicializar Google Earth Engine
-try:
-    if GEE_PROJECT_ID:
-        ee.Initialize(project=GEE_PROJECT_ID)
-    else:
-        ee.Initialize()
-except Exception as e:
-    print(f"Erro na inicialização: {e}\nTentando autenticar...")
-    ee.Authenticate()
-    if GEE_PROJECT_ID:
-        ee.Initialize(project=GEE_PROJECT_ID)
-    else:
-        ee.Initialize()
+initialize_gee()
 
 # 2. Região de interesse (Jacarepaguá, RJ)
 roi = ee.Geometry.Point([-43.3356, -22.8646])
